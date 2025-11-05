@@ -8,11 +8,16 @@ import { FinanceOverview } from "@/components/dashboard/FinanceOverview";
 import { TransactionList } from "@/components/dashboard/TransactionList";
 import { AddTransactionDialog } from "@/components/dashboard/AddTransactionDialog";
 import { FinanceInsights } from "@/components/dashboard/FinanceInsights";
+import { BudgetManager } from "@/components/dashboard/BudgetManager";
+import { FinanceChatbot } from "@/components/dashboard/FinanceChatbot";
+import { BudgetVsExpenseChart } from "@/components/dashboard/BudgetVsExpenseChart";
+import { SpendingAlerts } from "@/components/dashboard/SpendingAlerts";
 import type { Database } from "@/integrations/supabase/types";
 
 type Profile = Database["public"]["Tables"]["profiles"]["Row"];
 type Transaction = Database["public"]["Tables"]["transactions"]["Row"];
 type FinanceScore = Database["public"]["Tables"]["finance_scores"]["Row"];
+type Budget = Database["public"]["Tables"]["budgets"]["Row"];
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -21,6 +26,7 @@ const Dashboard = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [financeScore, setFinanceScore] = useState<FinanceScore | null>(null);
+  const [budgets, setBudgets] = useState<Budget[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -97,6 +103,21 @@ const Dashboard = () => {
       setFinanceScore(scoreData);
     }
 
+    // Fetch budgets
+    const currentMonth = new Date();
+    currentMonth.setDate(1);
+    const { data: budgetData, error: budgetError } = await supabase
+      .from("budgets")
+      .select("*")
+      .eq("user_id", user.id)
+      .gte("month", currentMonth.toISOString());
+
+    if (budgetError) {
+      console.error(budgetError);
+    } else {
+      setBudgets(budgetData || []);
+    }
+
     setLoading(false);
   };
 
@@ -133,6 +154,12 @@ const Dashboard = () => {
             financeScore={financeScore}
           />
 
+          <SpendingAlerts transactions={transactions} />
+
+          <BudgetManager userId={user.id} transactions={transactions} />
+
+          <BudgetVsExpenseChart budgets={budgets} transactions={transactions} />
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <TransactionList
@@ -149,6 +176,8 @@ const Dashboard = () => {
               />
             </div>
           </div>
+
+          <FinanceChatbot userId={user.id} />
         </div>
 
         <AddTransactionDialog onTransactionAdded={handleTransactionAdded} />
