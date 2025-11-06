@@ -14,6 +14,9 @@ interface FinanceOverviewProps {
 }
 
 export const FinanceOverview = ({ profile, transactions, financeScore }: FinanceOverviewProps) => {
+  const currentMonth = new Date();
+  currentMonth.setDate(1);
+
   const totalIncome = transactions
     .filter((t) => t.type === "income")
     .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
@@ -22,6 +25,12 @@ export const FinanceOverview = ({ profile, transactions, financeScore }: Finance
     .filter((t) => t.type === "expense")
     .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
 
+  const currentMonthExpenses = transactions
+    .filter((t) => t.type === "expense" && new Date(t.date) >= currentMonth)
+    .reduce((sum, t) => sum + parseFloat(t.amount.toString()), 0);
+
+  const monthlyIncome = Number(profile.monthly_income || 0);
+  const availableBalance = monthlyIncome - currentMonthExpenses;
   const netSavings = totalIncome - totalExpenses;
   const savingsPercentage = totalIncome > 0 ? ((netSavings / totalIncome) * 100).toFixed(1) : 0;
 
@@ -37,35 +46,41 @@ export const FinanceOverview = ({ profile, transactions, financeScore }: Finance
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card className="border-border/50 hover:shadow-lg transition-all">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
+            <Wallet className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className={`text-2xl font-bold ${availableBalance < 0 ? 'text-destructive' : 'text-success'}`}>
+              ₹{availableBalance.toFixed(2)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              This month: ₹{monthlyIncome.toFixed(0)} - ₹{currentMonthExpenses.toFixed(0)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50 hover:shadow-lg transition-all">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Monthly Expenses</CardTitle>
+            <TrendingDown className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-destructive">₹{currentMonthExpenses.toFixed(2)}</div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Current month
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border/50 hover:shadow-lg transition-all">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Income</CardTitle>
             <TrendingUp className="h-4 w-4 text-success" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-success">₹{totalIncome.toFixed(2)}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 hover:shadow-lg transition-all">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-            <TrendingDown className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-destructive">₹{totalExpenses.toFixed(2)}</div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border/50 hover:shadow-lg transition-all">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Net Savings</CardTitle>
-            <Wallet className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className={`text-2xl font-bold ${netSavings >= 0 ? 'text-success' : 'text-destructive'}`}>
-              ₹{netSavings.toFixed(2)}
-            </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {savingsPercentage}% of income
+              All time
             </p>
           </CardContent>
         </Card>

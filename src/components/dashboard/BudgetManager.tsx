@@ -16,6 +16,7 @@ type TransactionCategory = Database["public"]["Enums"]["transaction_category"];
 interface BudgetManagerProps {
   userId: string;
   transactions: any[];
+  monthlyIncome: number;
 }
 
 const categories: TransactionCategory[] = [
@@ -23,7 +24,7 @@ const categories: TransactionCategory[] = [
   "education", "healthcare", "shopping", "utilities", "other"
 ];
 
-export const BudgetManager = ({ userId, transactions }: BudgetManagerProps) => {
+export const BudgetManager = ({ userId, transactions, monthlyIncome }: BudgetManagerProps) => {
   const [budgets, setBudgets] = useState<Budget[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<TransactionCategory>("food");
   const [amount, setAmount] = useState("");
@@ -53,6 +54,19 @@ export const BudgetManager = ({ userId, transactions }: BudgetManagerProps) => {
   const handleSetBudget = async () => {
     if (!amount || parseFloat(amount) <= 0) {
       toast.error("Please enter a valid amount");
+      return;
+    }
+
+    // Calculate total budgets including new one
+    const totalBudgets = budgets
+      .filter(b => b.category !== selectedCategory)
+      .reduce((sum, b) => sum + Number(b.amount), 0) + parseFloat(amount);
+
+    if (monthlyIncome > 0 && totalBudgets > monthlyIncome) {
+      toast.error("⚠️ Warning: Total budgets exceed your monthly income!", {
+        description: `Total budgets: ₹${totalBudgets.toFixed(0)} > Income: ₹${monthlyIncome.toFixed(0)}`,
+        duration: 5000,
+      });
       return;
     }
 

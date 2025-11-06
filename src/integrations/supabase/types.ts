@@ -75,18 +75,21 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          monthly_income: number | null
           name: string
           role: Database["public"]["Enums"]["app_role"]
         }
         Insert: {
           created_at?: string
           id: string
+          monthly_income?: number | null
           name: string
           role: Database["public"]["Enums"]["app_role"]
         }
         Update: {
           created_at?: string
           id?: string
+          monthly_income?: number | null
           name?: string
           role?: Database["public"]["Enums"]["app_role"]
         }
@@ -133,7 +136,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      calculate_finance_score: {
+        Args: { p_user_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "student" | "professional" | "family"
