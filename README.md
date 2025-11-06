@@ -85,7 +85,7 @@ This project is built with:
 
 ## IBM Granite integration
 
-This project can use IBM Granite as the backend LLM for the finance assistant. The Supabase Edge Function at `supabase/functions/finance-chat/index.ts` will prefer IBM Granite when the following environment variables are set (see `.env.example`):
+This project uses IBM Granite as the backend LLM for the finance assistant. The Supabase Edge Function at `supabase/functions/finance-chat/index.ts` will prefer IBM Granite when the following environment variables are set (see `.env.example`):
 
 - `IBM_GRANITE_API_KEY` — your IBM API key
 - `IBM_GRANITE_API_URL` — the full HTTP endpoint for your Granite instance (region/tenant-specific)
@@ -95,12 +95,3 @@ Behavior:
 - If the IBM Granite env vars are present, the function will send the chat request to the IBM endpoint and proxy the streaming response to the frontend.
 - If IBM vars are not configured, the function falls back to the existing Lovable AI gateway (`LOVABLE_API_KEY`).
 
-Notes and next steps:
-- IBM's API payload shape may vary across deployments. The function sends a chat-like payload with `model`, `messages`, and `stream: true`. If your Granite deployment expects a different body shape, update `supabase/functions/finance-chat/index.ts` accordingly.
-- Make sure your IBM endpoint supports streaming if you want incremental assistant responses in the UI.
-- Add the IBM keys to your deployment environment (Supabase secret/config) or local `.env` used when running the function locally.
-
-If you'd like, I can:
-- adapt the request payload to a specific IBM Granite example from your IBM cloud account,
-- add validation and feature-flagging to toggle providers from the frontend,
-- or implement a small test harness that exercises the function against a mock IBM endpoint.
