@@ -1,3 +1,5 @@
+// @ts-nocheck
+// deno-lint-ignore-file no-explicit-any
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.79.0';
@@ -24,6 +26,20 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Fetch user's profile (for demographic/tone tuning)
+    let profile: any = null;
+    try {
+      const { data: profileRows } = await supabase
+        .from('profiles')
+        .select('name, role')
+        .eq('id', userId)
+        .limit(1);
+      profile = Array.isArray(profileRows) ? profileRows[0] : profileRows;
+    } catch (err) {
+      console.warn('Failed to fetch profile for tone tuning:', err);
+      profile = null;
+    }
 
     // Fetch user's transactions and budgets
     const { data: transactions } = await supabase
@@ -76,7 +92,22 @@ serve(async (req) => {
       };
     }) || [];
 
+    // Tune tone based on profile.role (student | professional | family)
+    const role = profile?.role;
+    const name = profile?.name || '';
+    const firstName = name ? name.split(' ')[0] : '';
+    let tone = 'friendly and encouraging';
+    if (role === 'student') tone = 'casual, encouraging, and explanatory (use simple language)';
+    else if (role === 'professional') tone = 'concise, formal, and data-driven';
+    else if (role === 'family') tone = 'warm, empathetic, and supportive';
+
     const systemPrompt = `You are a personal finance assistant. Analyze the user's financial data and provide helpful insights.
+
+User profile:
+- Name: ${name || 'Unknown'}
+- Role: ${role || 'unspecified'}
+
+Tone instructions: Address the user${firstName ? ` as ${firstName}` : ''}. Use a ${tone} tone.
 
 Current Month Data:
 - Total Spending: ₹${currentMonthSpending}
@@ -89,23 +120,60 @@ ${Object.entries(categorySpending).map(([cat, amt]) => `- ${cat}: ₹${amt}`).jo
 Budget Analysis:
 ${budgetAnalysis.map(b => `- ${b.category}: Spent ₹${b.spent} of ₹${b.budget} (${b.percentage}%)`).join('\n')}
 
-Provide concise, actionable insights. Be friendly and encouraging. Use emojis where appropriate.`;
+Provide concise, actionable insights. Be helpful, use emojis where appropriate, and adapt recommendations to the user's role.`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...messages
-        ],
-        stream: true,
-      }),
-    });
+    // Configure AI service endpoint
+    const AI_SERVICE_URL = Deno.env.get('AI_SERVICE_URL') || 'http://localhost:8000';
+    
+    let aiRequestUrl: string;
+    let aiRequestOptions: RequestInit;
+    let useLocalAI = true;
+
+    try {
+      // Try Python AI service first
+      aiRequestUrl = `${AI_SERVICE_URL}/v1/chat/completions`;
+      aiRequestOptions = {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages
+          ],
+          stream: true,
+        }),
+      };
+
+      // Quick check if service is available
+      const healthCheck = await fetch(`${AI_SERVICE_URL}/health`);
+      if (!healthCheck.ok) {
+        throw new Error('Local AI service unavailable');
+      }
+    } catch (err) {
+      // Fallback to Lovable gateway
+      console.warn('Local AI service error, falling back to Lovable:', err);
+      useLocalAI = false;
+      aiRequestUrl = 'https://ai.gateway.lovable.dev/v1/chat/completions';
+      aiRequestOptions = {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages
+          ],
+          stream: true,
+        }),
+      };
+    }
+
+    const response = await fetch(aiRequestUrl, aiRequestOptions);
 
     if (!response.ok) {
       if (response.status === 429) {
