@@ -115,7 +115,7 @@ const Auth = () => {
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-primary-glow bg-clip-text text-transparent mb-2">
             FinanceFlow
           </h1>
-          <p className="text-muted-foreground">Your personal finance assistant</p>
+          <p className="text-muted-foreground">Your personal finance assistant powered by IBM Granite 3.2-2B</p>
         </div>
 
         <Card className="border-border/50 shadow-lg">
