@@ -9,7 +9,7 @@ import { TransactionList } from "@/components/dashboard/TransactionList";
 import { AddTransactionDialog } from "@/components/dashboard/AddTransactionDialog";
 import { FinanceInsights } from "@/components/dashboard/FinanceInsights";
 import { BudgetManager } from "@/components/dashboard/BudgetManager";
-import { IncomeSetup } from "@/components/dashboard/IncomeSetup";
+import { IncomeManager } from "@/components/dashboard/IncomeManager";
 import { FinanceChatbot } from "@/components/dashboard/FinanceChatbot";
 import { BudgetVsExpenseChart } from "@/components/dashboard/BudgetVsExpenseChart";
 import { SpendingAlerts } from "@/components/dashboard/SpendingAlerts";
@@ -155,7 +155,7 @@ const Dashboard = () => {
             financeScore={financeScore}
           />
 
-          <IncomeSetup profile={profile} onIncomeUpdated={fetchUserData} />
+          <IncomeManager profile={profile} onIncomeUpdated={fetchUserData} />
 
           <SpendingAlerts transactions={transactions} />
 

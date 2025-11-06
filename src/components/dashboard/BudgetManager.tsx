@@ -30,6 +30,10 @@ export const BudgetManager = ({ userId, transactions, monthlyIncome }: BudgetMan
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Calculate if total budgets exceed income
+  const totalBudgetsAmount = budgets.reduce((sum, b) => sum + Number(b.amount), 0);
+  const showWarning = monthlyIncome > 0 && totalBudgetsAmount > monthlyIncome;
+
   useEffect(() => {
     fetchBudgets();
   }, [userId]);
@@ -119,6 +123,16 @@ export const BudgetManager = ({ userId, transactions, monthlyIncome }: BudgetMan
         <CardDescription>Set and track your budget for each category</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {showWarning && monthlyIncome > 0 && (
+          <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded-lg flex items-start gap-2">
+            <AlertCircle className="h-5 w-5 mt-0.5 flex-shrink-0" />
+            <div className="text-sm">
+              <p className="font-semibold">Budget Exceeds Income!</p>
+              <p>Your total budgets exceed your monthly income. Consider reducing your budgets to avoid overspending.</p>
+            </div>
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="space-y-2">
             <Label>Category</Label>
