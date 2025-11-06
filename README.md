@@ -1,20 +1,42 @@
-# Welcome to your Lovable project
+# Role-wise Finance Buddy
 
-## Project info
+Smart personal finance manager that adapts to your role (student, professional, or family) and provides tailored insights.
 
-**URL**: https://lovable.dev/projects/6c9710b8-b7e0-4d1b-8d6a-a3b374790379
+## Quick Start
 
-## How can I edit this code?
+### Frontend (React + Vite)
 
-There are several ways of editing your application.
+```bash
+# Install dependencies
+npm install
 
-**Use Lovable**
+# Start development server
+npm run dev
+```
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/6c9710b8-b7e0-4d1b-8d6a-a3b374790379) and start prompting.
+### AI Service (Python FastAPI)
 
-Changes made via Lovable will be committed automatically to this repo.
+```bash
+# Navigate to AI service directory
+cd ai_service
 
-**Use your preferred IDE**
+# Create Python virtual environment
+python -m venv venv
+
+# Activate virtual environment
+# Windows:
+.\venv\Scripts\activate
+# Linux/Mac:
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Start AI service
+uvicorn main:app --reload
+```
+
+### Development Setup
 
 If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
 
@@ -71,3 +93,25 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+
+## IBM Granite integration
+
+This project can use IBM Granite as the backend LLM for the finance assistant. The Supabase Edge Function at `supabase/functions/finance-chat/index.ts` will prefer IBM Granite when the following environment variables are set (see `.env.example`):
+
+- `IBM_GRANITE_API_KEY` — your IBM API key
+- `IBM_GRANITE_API_URL` — the full HTTP endpoint for your Granite instance (region/tenant-specific)
+- `IBM_GRANITE_MODEL` — optional model identifier (default: `granite-1`)
+
+Behavior:
+- If the IBM Granite env vars are present, the function will send the chat request to the IBM endpoint and proxy the streaming response to the frontend.
+- If IBM vars are not configured, the function falls back to the existing Lovable AI gateway (`LOVABLE_API_KEY`).
+
+Notes and next steps:
+- IBM's API payload shape may vary across deployments. The function sends a chat-like payload with `model`, `messages`, and `stream: true`. If your Granite deployment expects a different body shape, update `supabase/functions/finance-chat/index.ts` accordingly.
+- Make sure your IBM endpoint supports streaming if you want incremental assistant responses in the UI.
+- Add the IBM keys to your deployment environment (Supabase secret/config) or local `.env` used when running the function locally.
+
+If you'd like, I can:
+- adapt the request payload to a specific IBM Granite example from your IBM cloud account,
+- add validation and feature-flagging to toggle providers from the frontend,
+- or implement a small test harness that exercises the function against a mock IBM endpoint.
